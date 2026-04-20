@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TC Calc — Timecode Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+    --bg-primary: #0a0a0a;
+    --bg-panel: #141414;
+    --bg-panel-dark: #0d0d0d;
+    --bg-input: #1a1a1a;
+    --border: #2a2a2a;
+    --border-hover: #3a3a3a;
+    --accent: #ff8800;
+    --accent-dim: #cc6a00;
+    --accent-glow: rgba(255, 136, 0, 0.15);
+    --text-primary: #e0e0e0;
+    --text-secondary: #909090;
+    --text-dim: #606060;
+    --green: #4caf50;
+    --red: #ef5350;
+    --blue: #42a5f5;
+    --font-mono: 'Share Tech Mono', monospace;
+    --font-sans: 'Barlow Condensed', sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+body {
+    background-image:
+        radial-gradient(circle at 20% 10%, rgba(255, 136, 0, 0.04) 0%, transparent 40%),
+        radial-gradient(circle at 80% 90%, rgba(66, 165, 245, 0.03) 0%, transparent 40%);
+    padding: 20px;
+}
+
+.container { max-width: 1100px; margin: 0 auto; }
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    margin-bottom: 16px;
+}
+
+.brand { display: flex; align-items: center; gap: 14px; }
+
+.logo {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dim) 100%);
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 14px; color: #000; font-weight: bold;
+    box-shadow: 0 0 12px var(--accent-glow);
+}
+
+.title-block h1 {
+    font-family: var(--font-sans);
+    font-size: 22px; font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-primary);
+    line-height: 1;
+}
+
+.title-block .subtitle {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-secondary);
+    letter-spacing: 1px;
+    margin-top: 3px;
+}
+
+.credit {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+}
+
+.fps-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 12px 20px;
+    margin-bottom: 16px;
+}
+
+.fps-bar-label {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.fps-buttons { display: flex; gap: 6px; }
+
+.fps-btn {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    padding: 8px 18px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-radius: 3px;
+    transition: all 0.15s;
+    letter-spacing: 1px;
+}
+
+.fps-btn:hover { border-color: var(--border-hover); color: var(--text-primary); }
+
+.fps-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #000;
+    box-shadow: 0 0 10px var(--accent-glow);
+}
+
+.tabs {
+    display: flex;
+    gap: 2px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-bottom: none;
+    border-radius: 4px 4px 0 0;
+    padding: 4px 4px 0 4px;
+}
+
+.tab {
+    flex: 1;
+    padding: 12px 16px;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+}
+
+.tab:hover { color: var(--text-primary); }
+
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+.panel {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 0 0 4px 4px;
+    padding: 28px;
+    min-height: 420px;
+}
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+.section-label {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.mode-toggle {
+    display: inline-flex;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 3px;
+}
+
+.mode-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.15s;
+}
+
+.mode-btn:hover { color: var(--text-primary); }
+.mode-btn.active { background: var(--accent); color: #000; }
+
+.tc-input-group { margin-bottom: 6px; }
+
+.tc-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 6px;
+    transition: border-color 0.15s;
+}
+
+.tc-input-wrapper:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent-glow);
+}
+
+.tc-field {
+    width: 58px;
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 28px;
+    text-align: center;
+    padding: 10px 4px;
+    outline: none;
+    letter-spacing: 2px;
+}
+
+.tc-field:focus { color: var(--accent); }
+
+.tc-field::-webkit-outer-spin-button,
+.tc-field::-webkit-inner-spin-button {
+    -webkit-appearance: none; margin: 0;
+}
+
+.tc-separator {
+    font-family: var(--font-mono);
+    font-size: 28px;
+    color: var(--text-dim);
+    font-weight: bold;
+    user-select: none;
+}
+
+.tc-label-mini {
+    display: flex;
+    justify-content: space-around;
+    padding: 0 14px;
+    margin-top: 4px;
+}
+
+.tc-label-mini span {
+    width: 58px;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+}
+
+.calc-grid {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 18px;
+    align-items: start;
+    margin-bottom: 24px;
+}
+
+.operand-col { display: flex; flex-direction: column; }
+
+.operand-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    min-height: 28px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.op-center {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-top: 36px;
+}
+
+.op-btn-big {
+    width: 54px;
+    height: 54px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 28px;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.op-btn-big:hover { border-color: var(--border-hover); color: var(--text-primary); }
+
+.op-btn-big.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #000;
+    box-shadow: 0 0 12px var(--accent-glow);
+}
+
+.swap-btn {
+    width: 54px;
+    height: 32px;
+    background: var(--bg-panel-dark);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 3px;
+    letter-spacing: 1px;
+    transition: all 0.15s;
+    margin-top: 4px;
+}
+
+.swap-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+.value-input-wrapper {
+    display: flex;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+    transition: border-color 0.15s;
+}
+
+.value-input-wrapper:focus-within { border-color: var(--accent); }
+
+.value-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 28px;
+    padding: 10px 14px;
+    outline: none;
+    text-align: right;
+    min-width: 0;
+}
+
+.value-input:focus { color: var(--accent); }
+
+.value-unit {
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    background: var(--bg-panel-dark);
+    border-left: 1px solid var(--border);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--accent);
+    letter-spacing: 1px;
+}
+
+.result-box {
+    background: var(--bg-panel-dark);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 3px;
+    padding: 22px 24px;
+    margin-top: 12px;
+}
+
+.result-label {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+}
+
+.result-value {
+    font-family: var(--font-mono);
+    font-size: 38px;
+    color: var(--accent);
+    letter-spacing: 3px;
+    text-shadow: 0 0 20px var(--accent-glow);
+    word-break: break-all;
+    cursor: pointer;
+    transition: opacity 0.15s;
+}
+
+.result-value:hover { opacity: 0.8; }
+
+.result-meta {
+    margin-top: 12px;
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.result-meta-item {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-secondary);
+    letter-spacing: 1px;
+}
+
+.result-meta-item span {
+    color: var(--text-primary);
+    margin-left: 6px;
+}
+
+.result-value.negative {
+    color: var(--red);
+    text-shadow: 0 0 20px rgba(239, 83, 80, 0.15);
+}
+
+.result-box.error { border-left-color: var(--red); }
+
+.conv-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+}
+
+.conv-col { display: flex; flex-direction: column; }
+
+.conv-arrow {
+    text-align: center;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    font-size: 18px;
+    margin: 8px 0;
+}
+
+@media (max-width: 760px) {
+    .calc-grid { grid-template-columns: 1fr; }
+    .op-center {
+        flex-direction: row;
+        padding-top: 0;
+        justify-content: center;
+        margin: 8px 0;
+    }
+    .tc-field { font-size: 22px; width: 44px; }
+    .tc-separator { font-size: 22px; }
+    .tc-label-mini span { width: 44px; }
+    .result-value { font-size: 28px; }
+    .value-input { font-size: 22px; }
+    header {
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+    }
+    .conv-grid { grid-template-columns: 1fr; }
+}
+
+footer {
+    margin-top: 16px;
+    padding: 14px 24px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+}
+
+.status-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 6px var(--green);
+    margin-right: 6px;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.copy-toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--accent);
+    color: #000;
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 12px 24px;
+    border-radius: 3px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    transition: transform 0.3s;
+    z-index: 100;
+}
+
+.copy-toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<div class="container">
+
+    <header>
+        <div class="brand">
+            <div class="logo">TC</div>
+            <div class="title-block">
+                <h1>TC CALC</h1>
+                <div class="subtitle">TIMECODE CALCULATOR</div>
+            </div>
+        </div>
+        <div class="credit">MADE BY RICCARDO NESSI</div>
+    </header>
+
+    <div class="fps-bar">
+        <div class="fps-bar-label">Framerate</div>
+        <div class="fps-buttons" id="fpsButtons">
+            <button class="fps-btn" data-fps="24">24</button>
+            <button class="fps-btn active" data-fps="25">25</button>
+            <button class="fps-btn" data-fps="30">30</button>
+            <button class="fps-btn" data-fps="50">50</button>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab active" data-tab="calc">Calc</button>
+        <button class="tab" data-tab="convert">Convert</button>
+    </div>
+
+    <div class="panel">
+
+        <div class="tab-content active" id="tab-calc">
+
+            <div class="calc-grid">
+
+                <div class="operand-col">
+                    <div class="operand-header">
+                        <div class="section-label">TC A</div>
+                    </div>
+                    <div class="tc-input-group">
+                        <div class="tc-input-wrapper">
+                            <input type="text" class="tc-field tc-a" data-part="hh" maxlength="2" value="00">
+                            <span class="tc-separator">:</span>
+                            <input type="text" class="tc-field tc-a" data-part="mm" maxlength="2" value="00">
+                            <span class="tc-separator">:</span>
+                            <input type="text" class="tc-field tc-a" data-part="ss" maxlength="2" value="00">
+                            <span class="tc-separator">:</span>
+                            <input type="text" class="tc-field tc-a" data-part="ff" maxlength="2" value="00">
+                        </div>
+                        <div class="tc-label-mini">
+                            <span>HH</span><span>MM</span><span>SS</span><span>FF</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="op-center">
+                    <button class="op-btn-big active" data-op="+">+</button>
+                    <button class="op-btn-big" data-op="-">−</button>
+                    <button class="swap-btn" id="swapBtn" title="Swap A ↔ B">⇅ Swap</button>
+                </div>
+
+                <div class="operand-col">
+                    <div class="operand-header">
+                        <div class="section-label">B</div>
+                        <div class="mode-toggle" id="modeToggle">
+                            <button class="mode-btn active" data-mode="tc">TC</button>
+                            <button class="mode-btn" data-mode="frames">Frames</button>
+                            <button class="mode-btn" data-mode="seconds">Sec</button>
+                        </div>
+                    </div>
+
+                    <div class="tc-input-group" id="bAsTc">
+                        <div class="tc-input-wrapper">
+                            <input type="text" class="tc-field tc-b" data-part="hh" maxlength="2" value="00">
+                            <span class="tc-separator">:</span>
+                            <input type="text" class="tc-field tc-b" data-part="mm" maxlength="2" value="00">
+                            <span class="tc-separator">:</span>
+                            <input type="text" class="tc-field tc-b" data-part="ss" maxlength="2" value="00">
+                            <span class="tc-separator">:</span>
+                            <input type="text" class="tc-field tc-b" data-part="ff" maxlength="2" value="00">
+                        </div>
+                        <div class="tc-label-mini">
+                            <span>HH</span><span>MM</span><span>SS</span><span>FF</span>
+                        </div>
+                    </div>
+
+                    <div id="bAsValue" style="display:none;">
+                        <div class="value-input-wrapper">
+                            <input type="number" class="value-input" id="bValue" value="0" step="1">
+                            <div class="value-unit" id="bValueUnit">FR</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="result-box" id="resultCalcBox">
+                <div class="result-label" id="resultCalcLabel">Result</div>
+                <div class="result-value" id="resultCalc" title="Click to copy">00:00:00:00</div>
+                <div class="result-meta" id="resultCalcMeta"></div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="tab-convert">
+            <div class="conv-grid">
+                <div class="conv-col">
+                    <div class="section-label">Timecode</div>
+                    <div class="tc-input-group">
+                        <div class="tc-input-wrapper">
+                            <input type="text" class="tc-field tc-conv" data-part="hh" maxlength="2" value="00">
+                            <span class="tc-separator">:</span>
+                            <input type="text" class="tc-field tc-conv" data-part="mm" maxlength="2" value="00">
+                            <span class="tc-separator">:</span>
+                            <input type="text" class="tc-field tc-conv" data-part="ss" maxlength="2" value="00">
+                            <span class="tc-separator">:</span>
+                            <input type="text" class="tc-field tc-conv" data-part="ff" maxlength="2" value="00">
+                        </div>
+                        <div class="tc-label-mini">
+                            <span>HH</span><span>MM</span><span>SS</span><span>FF</span>
+                        </div>
+                    </div>
+                    <div class="conv-arrow">↓</div>
+                    <div class="result-box" style="border-left-color: var(--blue);">
+                        <div class="result-label">Total Frames</div>
+                        <div class="result-value" id="convTotalFrames" style="color: var(--blue); text-shadow: 0 0 20px rgba(66,165,245,0.15); font-size: 30px;" title="Click to copy">0</div>
+                        <div class="result-meta">
+                            <div class="result-meta-item">Seconds:<span id="convSeconds">0.000</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="conv-col">
+                    <div class="section-label">Total Frames</div>
+                    <div class="value-input-wrapper" style="margin-bottom: 6px;">
+                        <input type="number" class="value-input" id="framesInput" value="0" min="0" step="1">
+                        <div class="value-unit">FR</div>
+                    </div>
+                    <div class="conv-arrow">↓</div>
+                    <div class="result-box">
+                        <div class="result-label">Timecode</div>
+                        <div class="result-value" id="convResultTC" style="font-size: 30px;" title="Click to copy">00:00:00:00</div>
+                        <div class="result-meta">
+                            <div class="result-meta-item">Seconds:<span id="convResultSeconds">0.000</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <footer>
+        <div><span class="status-dot"></span>READY</div>
+        <div id="fpsStatus">FPS: 25</div>
+        <div>v1.0.0</div>
+    </footer>
+
+</div>
+
+<div class="copy-toast" id="copyToast">Copied</div>
+
+<script>
+const state = {
+    fps: 25,
+    op: '+',
+    bMode: 'tc'
+};
+
+function tcToFrames(hh, mm, ss, ff, fps) {
+    return ((hh * 3600) + (mm * 60) + ss) * fps + ff;
+}
+
+function framesToTc(totalFrames, fps) {
+    const negative = totalFrames < 0;
+    let f = Math.abs(Math.round(totalFrames));
+    const ff = f % fps;
+    const totalSeconds = Math.floor(f / fps);
+    const ss = totalSeconds % 60;
+    const totalMinutes = Math.floor(totalSeconds / 60);
+    const mm = totalMinutes % 60;
+    const hh = Math.floor(totalMinutes / 60);
+    return {
+        negative, hh, mm, ss, ff,
+        str: (negative ? '-' : '') + pad(hh) + ':' + pad(mm) + ':' + pad(ss) + ':' + pad(ff)
+    };
+}
+
+function pad(n) { return String(Math.abs(n)).padStart(2, '0'); }
+
+function readTc(selector) {
+    const fields = document.querySelectorAll(selector);
+    const parts = { hh: 0, mm: 0, ss: 0, ff: 0 };
+    fields.forEach(f => { parts[f.dataset.part] = parseInt(f.value) || 0; });
+    return parts;
+}
+
+function writeTc(selector, parts) {
+    document.querySelectorAll(selector).forEach(f => {
+        f.value = pad(parts[f.dataset.part] || 0);
+    });
+}
+
+function validateTcField(input, fps) {
+    let v = parseInt(input.value) || 0;
+    const part = input.dataset.part;
+    if (v < 0) v = 0;
+    if (part === 'hh' && v > 99) v = 99;
+    if ((part === 'mm' || part === 'ss') && v > 59) v = 59;
+    if (part === 'ff' && v >= fps) v = fps - 1;
+    input.value = pad(v);
+}
+
+function secondsToFrames(seconds, fps) {
+    return Math.round(seconds * fps);
+}
+
+function calc() {
+    const fps = state.fps;
+    const a = readTc('.tc-a');
+    const framesA = tcToFrames(a.hh, a.mm, a.ss, a.ff, fps);
+
+    let framesB = 0;
+    if (state.bMode === 'tc') {
+        const b = readTc('.tc-b');
+        framesB = tcToFrames(b.hh, b.mm, b.ss, b.ff, fps);
+    } else if (state.bMode === 'frames') {
+        framesB = parseInt(document.getElementById('bValue').value) || 0;
+    } else if (state.bMode === 'seconds') {
+        const secs = parseFloat(document.getElementById('bValue').value) || 0;
+        framesB = secondsToFrames(secs, fps);
+    }
+
+    const sign = state.op === '+' ? 1 : -1;
+    const total = framesA + (sign * framesB);
+    const result = framesToTc(total, fps);
+
+    const resEl = document.getElementById('resultCalc');
+    const boxEl = document.getElementById('resultCalcBox');
+    resEl.textContent = result.str;
+    resEl.classList.toggle('negative', result.negative);
+    boxEl.classList.toggle('error', result.negative);
+
+    const totalSeconds = (total / fps).toFixed(3);
+    let meta =
+        `<div class="result-meta-item">Total frames:<span>${total}</span></div>` +
+        `<div class="result-meta-item">Seconds:<span>${totalSeconds}</span></div>`;
+
+    if (state.bMode === 'tc' && state.op === '-') {
+        meta += `<div class="result-meta-item">Minutes:<span>${(total/fps/60).toFixed(3)}</span></div>`;
+    }
+
+    document.getElementById('resultCalcMeta').innerHTML = meta;
+
+    let label = 'Result';
+    if (state.bMode === 'tc' && state.op === '-') label = 'Duration (A − B)';
+    else if (state.op === '+') label = 'A + B';
+    else if (state.op === '-') label = 'A − B';
+    document.getElementById('resultCalcLabel').textContent = label;
+}
+
+function calcConvert() {
+    const fps = state.fps;
+    const tc = readTc('.tc-conv');
+    const frames = tcToFrames(tc.hh, tc.mm, tc.ss, tc.ff, fps);
+    document.getElementById('convTotalFrames').textContent = frames;
+    document.getElementById('convSeconds').textContent = (frames / fps).toFixed(3);
+
+    const f = parseInt(document.getElementById('framesInput').value) || 0;
+    const r = framesToTc(f, fps);
+    document.getElementById('convResultTC').textContent = r.str;
+    document.getElementById('convResultSeconds').textContent = (f / fps).toFixed(3);
+}
+
+function recalcAll() { calc(); calcConvert(); }
+
+document.getElementById('fpsButtons').addEventListener('click', (e) => {
+    const btn = e.target.closest('.fps-btn');
+    if (!btn) return;
+    document.querySelectorAll('.fps-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.fps = parseInt(btn.dataset.fps);
+    document.getElementById('fpsStatus').textContent = 'FPS: ' + state.fps;
+    document.querySelectorAll('.tc-field[data-part="ff"]').forEach(f => validateTcField(f, state.fps));
+    recalcAll();
+});
+
+document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+    });
+});
+
+document.querySelectorAll('.op-btn-big').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.op-btn-big').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        state.op = btn.dataset.op;
+        calc();
+    });
+});
+
+document.getElementById('modeToggle').addEventListener('click', (e) => {
+    const btn = e.target.closest('.mode-btn');
+    if (!btn) return;
+    document.querySelectorAll('#modeToggle .mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.bMode = btn.dataset.mode;
+
+    const bAsTc = document.getElementById('bAsTc');
+    const bAsValue = document.getElementById('bAsValue');
+    const bValue = document.getElementById('bValue');
+    const bValueUnit = document.getElementById('bValueUnit');
+
+    if (state.bMode === 'tc') {
+        bAsTc.style.display = 'block';
+        bAsValue.style.display = 'none';
+    } else {
+        bAsTc.style.display = 'none';
+        bAsValue.style.display = 'block';
+        if (state.bMode === 'frames') {
+            bValue.step = '1';
+            bValueUnit.textContent = 'FR';
+        } else {
+            bValue.step = '0.001';
+            bValueUnit.textContent = 'SEC';
+        }
+    }
+    calc();
+});
+
+document.getElementById('swapBtn').addEventListener('click', () => {
+    if (state.bMode !== 'tc') {
+        showToast('Swap only works with TC mode');
+        return;
+    }
+    const a = readTc('.tc-a');
+    const b = readTc('.tc-b');
+    writeTc('.tc-a', b);
+    writeTc('.tc-b', a);
+    calc();
+});
+
+function wireInputs() {
+    document.querySelectorAll('.tc-field').forEach(input => {
+        input.addEventListener('focus', () => input.select());
+
+        input.addEventListener('input', () => {
+            input.value = input.value.replace(/[^0-9]/g, '');
+            if (input.value.length === 2) {
+                const siblings = Array.from(input.parentElement.querySelectorAll('.tc-field'));
+                const idx = siblings.indexOf(input);
+                if (idx >= 0 && idx < siblings.length - 1) {
+                    siblings[idx + 1].focus();
+                }
+            }
+            recalcAll();
+        });
+
+        input.addEventListener('blur', () => {
+            validateTcField(input, state.fps);
+            recalcAll();
+        });
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                e.preventDefault();
+                let v = parseInt(input.value) || 0;
+                v += (e.key === 'ArrowUp' ? 1 : -1);
+                input.value = v;
+                validateTcField(input, state.fps);
+                recalcAll();
+            }
+        });
+    });
+
+    document.getElementById('bValue').addEventListener('input', calc);
+    document.getElementById('framesInput').addEventListener('input', calcConvert);
+}
+
+wireInputs();
+
+function showToast(text) {
+    const t = document.getElementById('copyToast');
+    t.textContent = text;
+    t.classList.add('show');
+    clearTimeout(showToast._timer);
+    showToast._timer = setTimeout(() => t.classList.remove('show'), 1400);
+}
+
+document.querySelectorAll('.result-value').forEach(el => {
+    el.addEventListener('click', () => {
+        const text = el.textContent.trim();
+        navigator.clipboard.writeText(text).then(() => {
+            showToast('Copied: ' + text);
+        }).catch(() => {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select();
+            try { document.execCommand('copy'); showToast('Copied: ' + text); } catch(e) {}
+            document.body.removeChild(ta);
+        });
+    });
+});
+
+recalcAll();
+</script>
+</body>
+</html>
