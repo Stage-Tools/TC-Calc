@@ -1,5 +1,5 @@
 TC Calc
-A fast, no-nonsense timecode calculator for the web. Built for video, audio post, and live production workflows.
+is timecode calculator for the web. Built for video, audio post, and live production workflows.
 https://stage-tools.github.io/TC-Calc/
 ---
 Features
